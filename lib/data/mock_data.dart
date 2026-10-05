@@ -1,0 +1,76 @@
+import '../models/listing.dart';
+
+List<Listing> mockListings = [
+  Listing(
+    id: '1',
+    ownerId: 'owner_1',
+    title: 'Уютная однокомнатная квартира возле Университета',
+    address: 'ул. Университетская, д. 12, кв. 45',
+    price: 250.0,
+    rooms: 1,
+    imageUrls: [
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+    ],
+    district: 'Центр',
+    description: 'Отличная квартира для студентов. Есть вся необходимая мебель, скоростной интернет, стиральная машина и микроволновка. В пешей доступности от главного корпуса университета, метро и остановок общественного транспорта. Низкие коммунальные платежи.',
+    isFavorite: true,
+  ),
+  Listing(
+    id: '2',
+    ownerId: 'owner_2',
+    title: 'Светлая двухкомнатная квартира для двух студентов',
+    address: 'пр. Студенческий, д. 5, кв. 11',
+    price: 400.0,
+    rooms: 2,
+    imageUrls: [
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
+    ],
+    district: 'Рышкановка',
+    description: 'Просторная квартира с раздельными комнатами. Идеально подходит для совместной аренды двумя студентами. Полностью оборудованная кухня, раздельный санузел, балкон. Рядом большой парк, магазины и недорогие кафе.',
+    isFavorite: false,
+  ),
+  Listing(
+    id: '3',
+    ownerId: 'owner_3',
+    title: 'Современная студия в новом доме',
+    address: 'ул. Молодежная, д. 24, кв. 89',
+    price: 320.0,
+    rooms: 1,
+    imageUrls: [
+      'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=800&q=80',
+    ],
+    district: 'Ботаника',
+    description: 'Студия с дизайнерским ремонтом в новом жилом комплексе. Автономное отопление, кондиционер, охраняемая территория. Отличный вариант для комфортного проживания и учебы.',
+    isFavorite: true,
+  ),
+  Listing(
+    id: '4',
+    ownerId: 'owner_4',
+    title: 'Трёхкомнатная квартира для компании',
+    address: 'ул. Академическая, д. 8',
+    price: 550.0,
+    rooms: 3,
+    imageUrls: [
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    ],
+    district: 'Буюканы',
+    description: 'Большая квартира с тремя изолированными комнатами. Полный комплект бытовой техники, включая посудомоечную машину. Подходит для группы из 3-4 студентов. Удобная транспортная развязка в любой конец города.',
+    isFavorite: false,
+  ),
+  Listing(
+    id: '5',
+    ownerId: 'owner_5',
+    title: 'Недорогая комната в общежитии квартирного типа',
+    address: 'ул. Рассветная, д. 15',
+    price: 150.0,
+    rooms: 1,
+    imageUrls: [
+      'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80',
+    ],
+    district: 'Чеканы',
+    description: 'Бюджетный вариант проживания для одного студента. Комната закрывается на ключ. Общая кухня и санузел на две комнаты. Чисто, аккуратно, дружелюбные соседи-студенты.',
+    isFavorite: false,
+  ),
+];
