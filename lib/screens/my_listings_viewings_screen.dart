@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
-import 'listing_detail_screen.dart';
-import 'add_edit_listing_screen.dart';
 
 class MyListingsAndViewingsScreen extends StatelessWidget {
   const MyListingsAndViewingsScreen({super.key});
@@ -29,12 +28,7 @@ class MyListingsAndViewingsScreen extends StatelessWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddEditListingScreen()),
-            );
-          },
+          onPressed: () => context.push('/listings/new'),
           icon: const Icon(Icons.add),
           label: const Text('Подать объявление'),
         ),
@@ -63,16 +57,11 @@ class MyListingsAndViewingsScreen extends StatelessWidget {
             trailing: IconButton(
               icon: const Icon(Icons.edit_note, color: Colors.blue),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Переход к редактированию объявления (симуляция)')),
-                );
+                context.push('/listings/new');
               },
             ),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ListingDetailScreen(listing: listing)),
-              );
+              context.push('/listings/${listing.id}');
             },
           ),
         );

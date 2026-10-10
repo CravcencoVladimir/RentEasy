@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/listing.dart';
 import '../data/mock_data.dart';
-import 'listing_detail_screen.dart';
 
 class ListingListScreen extends StatefulWidget {
   const ListingListScreen({super.key});
@@ -25,6 +25,12 @@ class _ListingListScreenState extends State<ListingListScreen> {
   void initState() {
     super.initState();
     _applyFilters();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _applyFilters() {
@@ -184,6 +190,11 @@ class _ListingListScreenState extends State<ListingListScreen> {
         title: const Text('RentEasy — Поиск Жилья'),
         centerTitle: false,
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/listings/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Сдать жильё'),
+      ),
       body: Column(
         children: [
           // Search & Filter header
@@ -311,13 +322,8 @@ class _ListingListScreenState extends State<ListingListScreen> {
                         ),
                         child: InkWell(
                           onTap: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ListingDetailScreen(listing: listing),
-                              ),
-                            );
-                            // Refresh list when coming back in case favorite status changed
+                            // Use go_router context.push for navigation chain with back arrow
+                            await context.push('/listings/${listing.id}');
                             setState(() {});
                           },
                           child: Column(
@@ -353,6 +359,14 @@ class _ListingListScreenState extends State<ListingListScreen> {
                                         setState(() {
                                           listing.isFavorite = !listing.isFavorite;
                                         });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
+                                            ),
+                                            duration: const Duration(seconds: 1),
+                                          ),
+                                        );
                                       },
                                     ),
                                   ),

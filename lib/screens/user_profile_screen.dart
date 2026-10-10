@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
+
+  Future<void> _logout(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Выйти из аккаунта?'),
+        content: const Text('Вы действительно хотите выйти из своего профиля?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Да, выйти'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Вы вышли из системы')),
+      );
+      context.go('/login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +91,7 @@ class UserProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AuthScreen()),
-                  );
-                },
+                onPressed: () => _logout(context),
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: const Text('Выйти из аккаунта', style: TextStyle(color: Colors.red)),
                 style: OutlinedButton.styleFrom(
@@ -101,7 +123,7 @@ class UserProfileScreen extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right, size: 18),
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Раздел "$title" находится в разработке (L2 - статический интерфейс)')),
+          SnackBar(content: Text('Раздел "$title" находится в разработке')),
         );
       },
     );

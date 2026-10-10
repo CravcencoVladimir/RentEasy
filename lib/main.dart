@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/auth_screen.dart';
+import 'router.dart';
 
 void main() {
   runApp(const RentEasyApp());
@@ -10,7 +10,7 @@ class RentEasyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'RentEasy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -28,7 +28,7 @@ class RentEasyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.light,
-      home: const AuthScreen(),
+      routerConfig: appRouter,
     );
   }
 }

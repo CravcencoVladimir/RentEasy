@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -15,19 +15,24 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Static authentication simulation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_isLoginMode ? 'Успешный вход!' : 'Регистрация успешна!'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      // Use go() instead of push() to clear login screen from stack
+      context.go('/listings');
     }
   }
 
@@ -73,6 +78,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 if (!_isLoginMode) ...[
                   TextFormField(
                     controller: _nameController,
+                    textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
                       labelText: 'Имя и фамилия',
                       prefixIcon: Icon(Icons.person),
@@ -90,14 +96,18 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Электронная почта',
                     prefixIcon: Icon(Icons.email),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty || !value.contains('@')) {
-                      return 'Введите корректный email';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Введите email';
+                    }
+                    if (!value.contains('@') || !value.contains('.')) {
+                      return 'Введите корректный email (например, user@mail.com)';
                     }
                     return null;
                   },
@@ -106,14 +116,18 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     labelText: 'Пароль',
                     prefixIcon: Icon(Icons.lock),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.length < 6) {
-                      return 'Пароль должен быть не менее 6 символов';
+                    if (value == null || value.isEmpty) {
+                      return 'Введите пароль';
+                    }
+                    if (value.length < 6) {
+                      return 'Пароль должен состоять минимум из 6 символов';
                     }
                     return null;
                   },
@@ -138,12 +152,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainScreen()),
-                    );
-                  },
+                  onPressed: () => context.go('/listings'),
                   child: Text(
                     'Войти как гость',
                     style: TextStyle(color: Colors.grey[600]),

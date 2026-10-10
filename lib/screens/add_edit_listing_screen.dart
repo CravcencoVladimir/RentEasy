@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 class AddEditListingScreen extends StatefulWidget {
   const AddEditListingScreen({super.key});
@@ -19,24 +21,33 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
   final List<String> _districts = ['Центр', 'Рышкановка', 'Ботаника', 'Буюканы', 'Чеканы'];
   final List<String> _mockUploadedImages = [];
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _addressController.dispose();
+    _priceController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
   void _simulatePhotoUpload() {
     setState(() {
       _mockUploadedImages.add('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80');
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Фотография успешно добавлена (симуляция)')),
+      const SnackBar(content: Text('Фотография успешно добавлена')),
     );
   }
 
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Объявление сохранено и отправлено на модерацию!'),
+        SnackBar(
+          content: Text('Объявление "${_titleController.text.trim()}" опубликовано!'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
@@ -62,6 +73,7 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
               // Title Field
               TextFormField(
                 controller: _titleController,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Название объявления',
                   hintText: 'например, Студия рядом с Политехом',
@@ -77,6 +89,7 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
               // Address Field
               TextFormField(
                 controller: _addressController,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Точный адрес',
                   prefixIcon: Icon(Icons.location_on),
@@ -130,15 +143,19 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
               // Price Field
               TextFormField(
                 controller: _priceController,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Цена в месяц (\$)',
                   prefixIcon: Icon(Icons.attach_money),
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Укажите цену';
-                  if (double.tryParse(value) == null) return 'Введите число';
+                  if (value == null || value.trim().isEmpty) return 'Укажите цену';
+                  final price = double.tryParse(value);
+                  if (price == null) return 'Введите число';
+                  if (price <= 0) return 'Цена должна быть больше 0';
                   return null;
                 },
               ),
@@ -148,6 +165,7 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 4,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   labelText: 'Описание условий проживания',
                   hintText: 'Расскажите про мебель, интернет, коммунальные услуги, залог...',

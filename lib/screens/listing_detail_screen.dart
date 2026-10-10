@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
+import '../data/mock_data.dart';
 
 class ListingDetailScreen extends StatefulWidget {
-  final Listing listing;
+  final String id;
 
-  const ListingDetailScreen({super.key, required this.listing});
+  const ListingDetailScreen({super.key, required this.id});
 
   @override
   State<ListingDetailScreen> createState() => _ListingDetailScreenState();
@@ -13,7 +14,7 @@ class ListingDetailScreen extends StatefulWidget {
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   int _currentImageIndex = 0;
 
-  void _showViewingDialog() {
+  void _showViewingDialog(Listing listing) {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     TimeOfDay selectedTime = const TimeOfDay(hour: 12, minute: 0);
 
@@ -29,7 +30,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.listing.title,
+                    listing.title,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -101,7 +102,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final listing = widget.listing;
+    final listing = mockListings.firstWhere(
+      (l) => l.id == widget.id,
+      orElse: () => mockListings.first,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -116,6 +120,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               setState(() {
                 listing.isFavorite = !listing.isFavorite;
               });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
             },
           ),
         ],
@@ -268,7 +280,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _showViewingDialog,
+                      onPressed: () => _showViewingDialog(listing),
                       icon: const Icon(Icons.event),
                       label: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 14.0),

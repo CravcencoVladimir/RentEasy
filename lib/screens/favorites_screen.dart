@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/listing.dart';
 import '../data/mock_data.dart';
-import 'listing_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -85,12 +85,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     },
                   ),
                   onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ListingDetailScreen(listing: listing),
-                      ),
-                    );
+                    await context.push('/listings/${listing.id}');
                     setState(() {});
                   },
                 );
