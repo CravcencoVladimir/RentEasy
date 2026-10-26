@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'data/mock_listing_repository.dart';
+import 'models/listings_model.dart';
 import 'router.dart';
 
 void main() {
-  runApp(const RentEasyApp());
+  final repository = MockListingRepository();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<MockListingRepository>.value(value: repository),
+        ChangeNotifierProvider(
+          create: (_) => ListingsModel(repository)..loadListings(),
+        ),
+      ],
+      child: const RentEasyApp(),
+    ),
+  );
 }
 
 class RentEasyApp extends StatelessWidget {

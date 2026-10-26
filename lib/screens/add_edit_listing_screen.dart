@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../models/listing.dart';
+import '../models/listings_model.dart';
 
 class AddEditListingScreen extends StatefulWidget {
   const AddEditListingScreen({super.key});
@@ -39,11 +42,38 @@ class _AddEditListingScreenState extends State<AddEditListingScreen> {
     );
   }
 
-  void _saveForm() {
+  void _saveForm() async {
     if (_formKey.currentState!.validate()) {
+      final draft = Listing(
+        id: '', // Repository generates unique id
+        ownerId: 'user_current',
+        title: _titleController.text.trim(),
+        address: _addressController.text.trim(),
+        price: double.parse(_priceController.text.trim()),
+        rooms: _selectedRooms,
+        district: _selectedDistrict,
+        description: _descriptionController.text.trim(),
+        imageUrls: _mockUploadedImages.isEmpty
+            ? ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80']
+            : List.from(_mockUploadedImages),
+      );
+
+      final error = await context.read<ListingsModel>().addListing(draft);
+      if (!mounted) return;
+
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Объявление "${_titleController.text.trim()}" опубликовано!'),
+          content: Text('Объявление "${draft.title}" успешно опубликовано!'),
           backgroundColor: Colors.green,
         ),
       );

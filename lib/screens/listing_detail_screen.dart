@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/listing.dart';
-import '../data/mock_data.dart';
+import '../models/listings_model.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final String id;
@@ -102,10 +103,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final listing = mockListings.firstWhere(
-      (l) => l.id == widget.id,
-      orElse: () => mockListings.first,
-    );
+    final model = context.watch<ListingsModel>();
+    final listing = model.byId(widget.id);
+
+    if (listing == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Детали объявления')),
+        body: Center(
+          child: model.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('Объявление не найдено или было удалено'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -117,13 +127,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               color: listing.isFavorite ? Colors.red : null,
             ),
             onPressed: () {
-              setState(() {
-                listing.isFavorite = !listing.isFavorite;
-              });
+              context.read<ListingsModel>().toggleFavorite(listing.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
+                    !listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
                   ),
                   duration: const Duration(seconds: 1),
                 ),

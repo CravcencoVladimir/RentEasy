@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../data/mock_data.dart';
+import 'package:provider/provider.dart';
+import '../models/listings_model.dart';
+import '../widgets/error_view.dart';
 
 class MyListingsAndViewingsScreen extends StatelessWidget {
   const MyListingsAndViewingsScreen({super.key});
@@ -37,32 +39,125 @@ class MyListingsAndViewingsScreen extends StatelessWidget {
   }
 
   Widget _buildMyListingsTab(BuildContext context) {
-    // Just grab first 2 mock listings as "Mine" for static demonstration
-    final myMockListings = mockListings.take(2).toList();
-    
+    final model = context.watch<ListingsModel>();
+
+    if (model.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (model.error != null) {
+      return ErrorView(
+        message: model.error!,
+        onRetry: () => context.read<ListingsModel>().loadListings(),
+      );
+    }
+
+    final myListings = model.listings;
+
+    if (myListings.isEmpty) {
+      return const Center(child: Text('У вас пока нет опубликованных объявлений'));
+    }
+
     return ListView.builder(
-      itemCount: myMockListings.length,
+      itemCount: myListings.length,
       padding: const EdgeInsets.all(8),
       itemBuilder: (context, index) {
-        final listing = myMockListings[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-          child: ListTile(
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.network(listing.imageUrls.first, width: 60, height: 60, fit: BoxFit.cover),
+        final listing = myListings[index];
+        return Dismissible(
+          key: ValueKey(listing.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          confirmDismiss: (_) async {
+            return await showDialog<bool>(
+              context: context,
+              builder: (dialogCtx) => AlertDialog(
+                title: const Text('Удалить объявление?'),
+                content: Text('Вы уверены, что хотите удалить "${listing.title}"?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: const Text('Отмена'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogCtx, true),
+                    child: const Text('Удалить'),
+                  ),
+                ],
+              ),
+            );
+          },
+          onDismissed: (_) async {
+            final error = await context.read<ListingsModel>().removeListing(listing.id);
+            if (!context.mounted) return;
+            if (error != null) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Объявление удалено')),
+              );
+            }
+          },
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            child: ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  listing.imageUrls.first,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image),
+                  ),
+                ),
+              ),
+              title: Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text('\$${listing.price.round()}/мес • Статус: Активно', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogCtx) => AlertDialog(
+                      title: const Text('Удалить объявление?'),
+                      content: Text('Вы уверены, что хотите удалить "${listing.title}"?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogCtx, false),
+                          child: const Text('Отмена'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogCtx, true),
+                          child: const Text('Удалить'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (ok == true && context.mounted) {
+                    final error = await context.read<ListingsModel>().removeListing(listing.id);
+                    if (!context.mounted) return;
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Объявление удалено')),
+                      );
+                    }
+                  }
+                },
+              ),
+              onTap: () => context.push('/listings/${listing.id}'),
             ),
-            title: Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text('\$${listing.price.round()}/мес • Статус: Активно', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_note, color: Colors.blue),
-              onPressed: () {
-                context.push('/listings/new');
-              },
-            ),
-            onTap: () {
-              context.push('/listings/${listing.id}');
-            },
           ),
         );
       },

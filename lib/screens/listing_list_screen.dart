@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../models/listing.dart';
-import '../data/mock_data.dart';
+import '../models/listings_model.dart';
+import '../widgets/error_view.dart';
 
 class ListingListScreen extends StatefulWidget {
   const ListingListScreen({super.key});
@@ -11,7 +13,6 @@ class ListingListScreen extends StatefulWidget {
 }
 
 class _ListingListScreenState extends State<ListingListScreen> {
-  List<Listing> _filteredListings = [];
   final TextEditingController _searchController = TextEditingController();
   
   // Filter states
@@ -22,31 +23,23 @@ class _ListingListScreenState extends State<ListingListScreen> {
   final List<String> _districts = ['Все', 'Центр', 'Рышкановка', 'Ботаника', 'Буюканы', 'Чеканы'];
 
   @override
-  void initState() {
-    super.initState();
-    _applyFilters();
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  void _applyFilters() {
-    setState(() {
-      _filteredListings = mockListings.where((listing) {
-        final matchesSearch = listing.title.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-            listing.description.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-            listing.address.toLowerCase().contains(_searchController.text.toLowerCase());
-        
-        final matchesDistrict = _selectedDistrict == 'Все' || listing.district == _selectedDistrict;
-        final matchesRooms = _selectedRooms == null || listing.rooms == _selectedRooms;
-        final matchesPrice = listing.price <= _maxPrice;
+  List<Listing> _applyFilters(List<Listing> allListings) {
+    return allListings.where((listing) {
+      final matchesSearch = listing.title.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          listing.description.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          listing.address.toLowerCase().contains(_searchController.text.toLowerCase());
+      
+      final matchesDistrict = _selectedDistrict == 'Все' || listing.district == _selectedDistrict;
+      final matchesRooms = _selectedRooms == null || listing.rooms == _selectedRooms;
+      final matchesPrice = listing.price <= _maxPrice;
 
-        return matchesSearch && matchesDistrict && matchesRooms && matchesPrice;
-      }).toList();
-    });
+      return matchesSearch && matchesDistrict && matchesRooms && matchesPrice;
+    }).toList();
   }
 
   void _resetFilters() {
@@ -55,7 +48,6 @@ class _ListingListScreenState extends State<ListingListScreen> {
       _selectedDistrict = 'Все';
       _selectedRooms = null;
       _maxPrice = 600.0;
-      _applyFilters();
     });
   }
 
@@ -110,7 +102,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
                         onSelected: (selected) {
                           if (selected) {
                             setModalState(() => _selectedDistrict = district);
-                            _applyFilters();
+                            setState(() {});
                           }
                         },
                       );
@@ -133,7 +125,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
                             setModalState(() {
                               _selectedRooms = selected ? roomCount : null;
                             });
-                            _applyFilters();
+                            setState(() {});
                           },
                         ),
                       );
@@ -157,7 +149,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
                     label: '\$${_maxPrice.round()}',
                     onChanged: (value) {
                       setModalState(() => _maxPrice = value);
-                      _applyFilters();
+                      setState(() {});
                     },
                   ),
                   const SizedBox(height: 24),
@@ -185,17 +177,20 @@ class _ListingListScreenState extends State<ListingListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('RentEasy — Поиск Жилья'),
-        centerTitle: false,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/listings/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Сдать жильё'),
-      ),
-      body: Column(
+    final model = context.watch<ListingsModel>();
+
+    Widget content;
+    if (model.isLoading) {
+      content = const Center(child: CircularProgressIndicator());
+    } else if (model.error != null) {
+      content = ErrorView(
+        message: model.error!,
+        onRetry: () => context.read<ListingsModel>().loadListings(),
+      );
+    } else {
+      final filteredListings = _applyFilters(model.listings);
+
+      content = Column(
         children: [
           // Search & Filter header
           Padding(
@@ -207,14 +202,14 @@ class _ListingListScreenState extends State<ListingListScreen> {
                     controller: _searchController,
                     hintText: 'Поиск (улица, описание...)',
                     leading: const Icon(Icons.search),
-                    onChanged: (value) => _applyFilters(),
+                    onChanged: (value) => setState(() {}),
                     trailing: [
                       if (_searchController.text.isNotEmpty)
                         IconButton(
                           icon: const Icon(Icons.clear),
                           onPressed: () {
                             _searchController.clear();
-                            _applyFilters();
+                            setState(() {});
                           },
                         )
                     ],
@@ -274,13 +269,13 @@ class _ListingListScreenState extends State<ListingListScreen> {
               ),
             ),
 
-          // Listings list count
+          // Listings count
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
             child: Row(
               children: [
                 Text(
-                  'Найдено объявлений: ${_filteredListings.length}',
+                  'Найдено объявлений: ${filteredListings.length}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 ),
               ],
@@ -289,7 +284,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
 
           // Main list
           Expanded(
-            child: _filteredListings.isEmpty
+            child: filteredListings.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -309,10 +304,10 @@ class _ListingListScreenState extends State<ListingListScreen> {
                     ),
                   )
                 : ListView.builder(
-                    itemCount: _filteredListings.length,
+                    itemCount: filteredListings.length,
                     padding: const EdgeInsets.all(8.0),
                     itemBuilder: (context, index) {
-                      final listing = _filteredListings[index];
+                      final listing = filteredListings[index];
                       return Card(
                         clipBehavior: Clip.antiAlias,
                         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
@@ -321,11 +316,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: InkWell(
-                          onTap: () async {
-                            // Use go_router context.push for navigation chain with back arrow
-                            await context.push('/listings/${listing.id}');
-                            setState(() {});
-                          },
+                          onTap: () => context.push('/listings/${listing.id}'),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -356,13 +347,11 @@ class _ListingListScreenState extends State<ListingListScreen> {
                                         color: listing.isFavorite ? Colors.red : null,
                                       ),
                                       onPressed: () {
-                                        setState(() {
-                                          listing.isFavorite = !listing.isFavorite;
-                                        });
+                                        context.read<ListingsModel>().toggleFavorite(listing.id);
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
+                                              !listing.isFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
                                             ),
                                             duration: const Duration(seconds: 1),
                                           ),
@@ -453,7 +442,20 @@ class _ListingListScreenState extends State<ListingListScreen> {
                   ),
           ),
         ],
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('RentEasy — Поиск Жилья'),
+        centerTitle: false,
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/listings/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Сдать жильё'),
+      ),
+      body: content,
     );
   }
 }

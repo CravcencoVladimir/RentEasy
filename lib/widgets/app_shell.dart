@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../models/listings_model.dart';
 
 class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -8,6 +10,8 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final favoriteCount = context.watch<ListingsModel>().favoriteCount;
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
@@ -18,23 +22,31 @@ class AppShell extends StatelessWidget {
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.search_outlined),
             selectedIcon: Icon(Icons.search),
             label: 'Поиск',
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_border),
-            selectedIcon: Icon(Icons.favorite),
+            icon: Badge(
+              label: Text('$favoriteCount'),
+              isLabelVisible: favoriteCount > 0,
+              child: const Icon(Icons.favorite_border),
+            ),
+            selectedIcon: Badge(
+              label: Text('$favoriteCount'),
+              isLabelVisible: favoriteCount > 0,
+              child: const Icon(Icons.favorite),
+            ),
             label: 'Избранное',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.assignment_outlined),
             selectedIcon: Icon(Icons.assignment),
             label: 'Активность',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Профиль',

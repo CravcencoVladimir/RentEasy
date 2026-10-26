@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../data/mock_listing_repository.dart';
+import '../models/listings_model.dart';
 
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
 
+  @override
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -33,6 +41,9 @@ class UserProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final repo = context.watch<MockListingRepository>();
+    final model = context.watch<ListingsModel>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Профиль пользователя'),
@@ -68,16 +79,42 @@ class UserProfileScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
+                    _buildStatColumn('${model.listings.length}', 'Объявлений'),
+                    Container(height: 30, width: 1, color: Colors.grey[300]),
+                    _buildStatColumn('${model.favoriteCount}', 'В Избранном'),
+                    Container(height: 30, width: 1, color: Colors.grey[300]),
                     _buildStatColumn('3', 'Просмотра'),
-                    Container(height: 30, width: 1, color: Colors.grey[300]),
-                    _buildStatColumn('2', 'Объявления'),
-                    Container(height: 30, width: 1, color: Colors.grey[300]),
-                    _buildStatColumn('5', 'В Избранном'),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
+
+            // Demo Error Switch Tile
+            Card(
+              color: repo.simulateError ? Colors.red[50] : null,
+              child: SwitchListTile(
+                secondary: Icon(
+                  Icons.wifi_off_rounded,
+                  color: repo.simulateError ? Colors.red : Colors.grey,
+                ),
+                title: const Text('Симулировать сбой сети', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Включите для тестирования экрана ошибки и аварий в L4'),
+                value: repo.simulateError,
+                onChanged: (value) {
+                  setState(() {
+                    repo.simulateError = value;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(value ? 'Сбой сети включен!' : 'Сбой сети выключен'),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // Profile Settings Menu Options
             _buildMenuTile(context, Icons.person_outline, 'Личные данные', 'Изменить имя, контакты'),
