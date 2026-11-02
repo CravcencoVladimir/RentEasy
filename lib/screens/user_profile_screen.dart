@@ -105,9 +105,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   setState(() {
                     repo.simulateError = value;
                   });
+                  // Trigger model to load data from repository with the new simulateError state
+                  context.read<ListingsModel>().loadListings();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(value ? 'Сбой сети включен!' : 'Сбой сети выключен'),
+                      content: Text(value ? 'Сбой сети включен! Перезагрузка данных...' : 'Сбой сети выключен. Данные восстановлены'),
                       duration: const Duration(seconds: 1),
                     ),
                   );
