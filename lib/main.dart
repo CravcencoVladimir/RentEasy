@@ -1,17 +1,47 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'data/mock_listing_repository.dart';
+import 'data/auth_api.dart';
+import 'data/http_listing_repository.dart';
+import 'data/token_store.dart';
 import 'models/listings_model.dart';
 import 'router.dart';
 
-void main() {
-  final repository = MockListingRepository();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // API Base URL depending on platform
+  final String apiBaseUrl = kIsWeb
+      ? 'http://localhost:8080'
+      : (defaultTargetPlatform == TargetPlatform.android
+          ? 'http://10.0.2.2:8080'
+          : 'http://localhost:8080');
+
+  final tokenStore = TokenStore();
+  final savedToken = await tokenStore.readToken();
+
+  // Configure initial location based on saved JWT token
+  if (savedToken != null && savedToken.isNotEmpty) {
+    appRouter.go('/listings');
+  }
+
+  final repository = HttpListingRepository(
+    apiBaseUrl,
+    tokenStore,
+    onUnauthorized: () {
+      appRouter.go('/login');
+    },
+  );
+
+  final authApi = AuthApi(apiBaseUrl, tokenStore);
 
   runApp(
     MultiProvider(
       providers: [
-        Provider<MockListingRepository>.value(value: repository),
+        Provider<TokenStore>.value(value: tokenStore),
+        Provider<AuthApi>.value(value: authApi),
+        Provider<HttpListingRepository>.value(value: repository),
         ChangeNotifierProvider(
           create: (_) => ListingsModel(repository)..loadListings(),
         ),

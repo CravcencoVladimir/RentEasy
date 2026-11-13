@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../core/result.dart';
+import '../data/auth_api.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -10,6 +13,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool _isLoginMode = true;
+  bool _isSubmitting = false;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,16 +27,46 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isLoginMode ? 'Успешный вход!' : 'Регистрация успешна!'),
-          backgroundColor: Colors.green,
-        ),
+  void _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    final authApi = context.read<AuthApi>();
+    final Result<String> result;
+
+    if (_isLoginMode) {
+      result = await authApi.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-      // Use go() instead of push() to clear login screen from stack
-      context.go('/listings');
+    } else {
+      result = await authApi.register(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    switch (result) {
+      case Ok():
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isLoginMode ? 'Успешный вход!' : 'Регистрация успешна!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.go('/listings');
+      case Err(:final msg):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -134,10 +168,16 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _submitForm,
+                  onPressed: _isSubmitting ? null : _submitForm,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    child: Text(_isLoginMode ? 'Войти' : 'Зарегистрироваться', style: const TextStyle(fontSize: 16)),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(_isLoginMode ? 'Войти' : 'Зарегистрироваться', style: const TextStyle(fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 16),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../data/mock_listing_repository.dart';
+import '../data/auth_api.dart';
 import '../models/listings_model.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -32,6 +32,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
 
     if (ok == true && context.mounted) {
+      await context.read<AuthApi>().logout();
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Вы вышли из системы')),
       );
@@ -41,7 +43,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.watch<MockListingRepository>();
     final model = context.watch<ListingsModel>();
 
     return Scaffold(
@@ -89,34 +90,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Demo Error Switch Tile
-            Card(
-              color: repo.simulateError ? Colors.red[50] : null,
-              child: SwitchListTile(
-                secondary: Icon(
-                  Icons.wifi_off_rounded,
-                  color: repo.simulateError ? Colors.red : Colors.grey,
-                ),
-                title: const Text('Симулировать сбой сети', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Включите для тестирования экрана ошибки и аварий в L4'),
-                value: repo.simulateError,
-                onChanged: (value) {
-                  setState(() {
-                    repo.simulateError = value;
-                  });
-                  // Trigger model to load data from repository with the new simulateError state
-                  context.read<ListingsModel>().loadListings();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(value ? 'Сбой сети включен! Перезагрузка данных...' : 'Сбой сети выключен. Данные восстановлены'),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
 
             // Profile Settings Menu Options
             _buildMenuTile(context, Icons.person_outline, 'Личные данные', 'Изменить имя, контакты'),
