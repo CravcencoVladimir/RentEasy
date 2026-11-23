@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -81,7 +82,7 @@ void main() async {
     },
   ];
 
-  await for (final request in server) {
+  server.listen((HttpRequest request) async {
     // Add CORS headers
     request.response.headers.add('Access-Control-Allow-Origin', '*');
     request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -90,19 +91,22 @@ void main() async {
     if (request.method == 'OPTIONS') {
       request.response.statusCode = HttpStatus.ok;
       await request.response.close();
-      continue;
+      return;
     }
 
-    final path = request.uri.path;
+    var path = request.uri.path;
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.substring(0, path.length - 1);
+    }
     final method = request.method;
 
     print('$method $path');
 
     try {
-      // 1. GET /health
-      if (method == 'GET' && path == '/health') {
-        _sendJson(request, {'status': 'ok'});
-        continue;
+      // Root / health
+      if (method == 'GET' && (path == '' || path == '/' || path == '/health')) {
+        _sendJson(request, {'status': 'ok', 'message': 'RentEasy API Backend Running'});
+        return;
       }
 
       // 2. POST /auth/login
@@ -113,12 +117,12 @@ void main() async {
 
         if (email.toString().isEmpty || password.toString().isEmpty) {
           _sendJson(request, {'message': 'Заполните email и пароль'}, status: HttpStatus.badRequest);
-          continue;
+          return;
         }
 
         if (password.toString().length < 6) {
-          _sendJson(request, {'message': 'Неверный пароль'}, status: HttpStatus.unauthorized);
-          continue;
+          _sendJson(request, {'message': 'Пароль должен состоять минимум из 6 символов'}, status: HttpStatus.unauthorized);
+          return;
         }
 
         final token = 'jwt_token_${DateTime.now().millisecondsSinceEpoch}';
@@ -126,7 +130,7 @@ void main() async {
           'token': token,
           'user': {'id': 'u1', 'name': 'Иван Иванов', 'email': email}
         });
-        continue;
+        return;
       }
 
       // 3. POST /auth/register
@@ -138,7 +142,7 @@ void main() async {
 
         if (email.toString().isEmpty || password.toString().isEmpty) {
           _sendJson(request, {'message': 'Заполните email и пароль'}, status: HttpStatus.badRequest);
-          continue;
+          return;
         }
 
         final token = 'jwt_token_${DateTime.now().millisecondsSinceEpoch}';
@@ -146,7 +150,7 @@ void main() async {
           'token': token,
           'user': {'id': 'u2', 'name': name, 'email': email}
         });
-        continue;
+        return;
       }
 
       // Check auth for protected routes if token invalid
@@ -154,7 +158,7 @@ void main() async {
       final isAuthRequired = method == 'POST' || method == 'DELETE' || method == 'PUT';
       if (isAuthRequired && (authHeader == null || !authHeader.startsWith('Bearer '))) {
         _sendJson(request, {'message': 'Необходима авторизация (401)'}, status: HttpStatus.unauthorized);
-        continue;
+        return;
       }
 
       // 4. GET /listings
@@ -181,7 +185,7 @@ void main() async {
           final endIndex = (startIndex + limit < result.length) ? startIndex + limit : result.length;
           _sendJson(request, result.sublist(startIndex, endIndex));
         }
-        continue;
+        return;
       }
 
       // 5. GET /listings/:id
@@ -193,7 +197,7 @@ void main() async {
         } else {
           _sendJson(request, item);
         }
-        continue;
+        return;
       }
 
       // 6. POST /listings
@@ -214,7 +218,7 @@ void main() async {
         };
         listings.add(newItem);
         _sendJson(request, newItem, status: HttpStatus.created);
-        continue;
+        return;
       }
 
       // 7. DELETE /listings/:id
@@ -223,7 +227,7 @@ void main() async {
         listings.removeWhere((element) => element['id'] == id);
         request.response.statusCode = HttpStatus.noContent;
         await request.response.close();
-        continue;
+        return;
       }
 
       // 8. PUT /listings/:id
@@ -237,20 +241,23 @@ void main() async {
         } else {
           _sendJson(request, {'message': 'Объявление не найдено'}, status: HttpStatus.notFound);
         }
-        continue;
+        return;
       }
 
       // 9. POST /files (Multipart Upload)
       if (method == 'POST' && path == '/files') {
         _sendJson(request, {'url': '/files/sample_uploaded_image.jpg'}, status: HttpStatus.created);
-        continue;
+        return;
       }
 
-      _sendJson(request, {'message': 'Маршрут не найден'}, status: HttpStatus.notFound);
+      _sendJson(request, {'message': 'Маршрут не найден: $path'}, status: HttpStatus.notFound);
     } catch (e) {
       _sendJson(request, {'message': 'Внутренняя ошибка сервера: $e'}, status: HttpStatus.internalServerError);
     }
-  }
+  });
+
+  // Keep process alive indefinitely
+  await Completer().future;
 }
 
 void _sendJson(HttpRequest request, dynamic data, {int status = HttpStatus.ok}) {
