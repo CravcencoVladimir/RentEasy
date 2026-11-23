@@ -19,7 +19,7 @@ class AuthApi {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email, 'password': password}),
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -33,10 +33,10 @@ class AuthApi {
             : 'Ошибка авторизации (${response.statusCode})';
         return Err(msg);
       }
-    } on SocketException {
-      return const Err('Сервер недоступен. Проверьте подключение к сети.');
+    } on SocketException catch (e) {
+      return Err('Сервер недоступен на $baseUrl ($e)');
     } on TimeoutException {
-      return const Err('Превышено время ожидания ответа при входе.');
+      return const Err('Превышено время ожидания ответа при входе');
     } catch (e) {
       return Err('Ошибка при входе: $e');
     }
@@ -50,7 +50,7 @@ class AuthApi {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'name': name, 'email': email, 'password': password}),
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -64,10 +64,10 @@ class AuthApi {
             : 'Ошибка регистрации (${response.statusCode})';
         return Err(msg);
       }
-    } on SocketException {
-      return const Err('Сервер недоступен. Проверьте подключение к сети.');
+    } on SocketException catch (e) {
+      return Err('Сервер недоступен на $baseUrl ($e)');
     } on TimeoutException {
-      return const Err('Превышено время ожидания ответа при регистрации.');
+      return const Err('Превышено время ожидания ответа при регистрации');
     } catch (e) {
       return Err('Ошибка при регистрации: $e');
     }
