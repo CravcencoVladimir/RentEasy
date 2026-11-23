@@ -11,10 +11,10 @@ import 'router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // API Base URL pointing to your local IP 172.18.6.71
+  // API Base URL pointing to your local IP 172.20.10.2
   final String apiBaseUrl = kIsWeb
       ? 'http://localhost:8080'
-      : 'http://172.18.6.71:8080';
+      : 'http://172.20.10.2:8080';
 
   final tokenStore = TokenStore();
   final savedToken = await tokenStore.readToken();
