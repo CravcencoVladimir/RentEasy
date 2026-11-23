@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -18,7 +19,7 @@ class AuthApi {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email, 'password': password}),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -34,6 +35,8 @@ class AuthApi {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте подключение к сети.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания ответа при входе.');
     } catch (e) {
       return Err('Ошибка при входе: $e');
     }
@@ -47,7 +50,7 @@ class AuthApi {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'name': name, 'email': email, 'password': password}),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -63,6 +66,8 @@ class AuthApi {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте подключение к сети.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания ответа при регистрации.');
     } catch (e) {
       return Err('Ошибка при регистрации: $e');
     }

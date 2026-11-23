@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -48,7 +49,7 @@ class HttpListingRepository implements ListingRepository {
 
       final response = await http
           .get(uri, headers: await _headers())
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       _checkUnauthorized(response.statusCode);
 
@@ -61,6 +62,8 @@ class HttpListingRepository implements ListingRepository {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте сетевое подключение.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания сервера. Запустите сервер (cd server && dart main.dart).');
     } catch (e) {
       return Err('Сбой загрузки данных: $e');
     }
@@ -72,7 +75,7 @@ class HttpListingRepository implements ListingRepository {
       final uri = Uri.parse('$baseUrl/listings/$id');
       final response = await http
           .get(uri, headers: await _headers())
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       _checkUnauthorized(response.statusCode);
 
@@ -84,6 +87,8 @@ class HttpListingRepository implements ListingRepository {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте сетевое подключение.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания ответа от сервера.');
     } catch (e) {
       return Err('Ошибка получения деталей: $e');
     }
@@ -99,7 +104,7 @@ class HttpListingRepository implements ListingRepository {
             headers: await _headers(),
             body: jsonEncode(_toJson(listing)),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       _checkUnauthorized(response.statusCode);
 
@@ -115,6 +120,8 @@ class HttpListingRepository implements ListingRepository {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте сетевое подключение.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания сохранения.');
     } catch (e) {
       return Err('Ошибка при создании: $e');
     }
@@ -126,7 +133,7 @@ class HttpListingRepository implements ListingRepository {
       final uri = Uri.parse('$baseUrl/listings/$id');
       final response = await http
           .delete(uri, headers: await _headers())
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       _checkUnauthorized(response.statusCode);
 
@@ -137,6 +144,8 @@ class HttpListingRepository implements ListingRepository {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте сетевое подключение.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания удаления.');
     } catch (e) {
       return Err('Ошибка удаления: $e');
     }
@@ -152,7 +161,7 @@ class HttpListingRepository implements ListingRepository {
             headers: await _headers(),
             body: jsonEncode(_toJson(listing)),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 5));
 
       _checkUnauthorized(response.statusCode);
 
@@ -164,6 +173,8 @@ class HttpListingRepository implements ListingRepository {
       }
     } on SocketException {
       return const Err('Сервер недоступен. Проверьте сетевое подключение.');
+    } on TimeoutException {
+      return const Err('Превышено время ожидания обновления.');
     } catch (e) {
       return Err('Ошибка обновления: $e');
     }
